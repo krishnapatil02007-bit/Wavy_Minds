@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold">System Architecture</h1>
+        <p class="text-muted">Technical breakdown of the HydroAI IoT & ML Pipeline</p>
+    </div>
+
+    <div class="card shadow-sm mb-5 border-0">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-project-diagram me-2"></i>Water Distribution Flow & Sensor Placement</h5>
+        </div>
+        <div class="card-body text-center p-5 bg-light">
+            
+            <div class="d-flex justify-content-center align-items-center flow-diagram">
+                
+                <div class="flow-step">
+                    <div class="icon-box bg-white border-primary text-primary shadow-sm">
+                        <i class="fas fa-water fa-2x"></i>
+                    </div>
+                    <div class="mt-2 fw-bold">Borewell Source</div>
+                    <span class="badge bg-secondary">Sensor Node 1</span>
+                </div>
+
+                <div class="flow-arrow text-muted">
+                    <i class="fas fa-long-arrow-alt-right fa-2x"></i>
+                    <div>Pump</div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="icon-box bg-white border-warning text-warning shadow-sm">
+                        <i class="fas fa-layer-group fa-2x"></i>
+                    </div>
+                    <div class="mt-2 fw-bold">Overhead Tank</div>
+                    <span class="badge bg-secondary">Sensor Node 2</span>
+                </div>
+
+                <div class="flow-arrow text-muted">
+                    <i class="fas fa-long-arrow-alt-right fa-2x"></i>
+                    <div>Gravity</div>
+                </div>
+
+                <div class="flow-step">
+                    <div class="icon-box bg-white border-success text-success shadow-sm">
+                        <i class="fas fa-faucet fa-2x"></i>
+                    </div>
+                    <div class="mt-2 fw-bold">Drinking Tap</div>
+                    <span class="badge bg-secondary">Sensor Node 3</span>
+                </div>
+
+            </div>
+            
+            <div class="mt-4 text-muted small">
+                *Contamination Logic: If Node 2 is contaminated but Node 1 is safe, the source is the Tank.*
+            </div>
+        </div>
+    </div>
+    
+    
+
+[Image of water distribution system diagram]
+
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title fw-bold mb-4">🤖 ML Anomaly Detection</h4>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>Model:</strong> Isolation Forest (Unsupervised Learning)
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Why:</strong> Detects deviations without needing labeled "unsafe" data.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Features:</strong> pH, TDS, Turbidity, Temperature.
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Training Data:</strong> Synthetic dataset based on BIS Drinking Water Standards.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title fw-bold mb-4">⚡ IoT Architecture</h4>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fab fa-python fa-2x text-primary me-3"></i>
+                        <div>
+                            <strong>Backend:</strong> Flask (Python) handles API requests and ML processing.
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-microchip fa-2x text-success me-3"></i>
+                        <div>
+                            <strong>Simulation:</strong> Modular Python script mimics ESP32 JSON payloads.
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fab fa-bootstrap fa-2x text-purple me-3" style="color: #6610f2;"></i>
+                        <div>
+                            <strong>Frontend:</strong> Bootstrap 5 Dashboard with AJAX polling.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    /* Styling for the flow diagram */
+    .flow-diagram { gap: 20px; flex-wrap: wrap; }
+    .icon-box {
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto;
+        border: 3px solid;
+    }
+    .flow-arrow { padding: 0 20px; text-align: center; }
+    @media (max-width: 768px) {
+        .flow-diagram { flex-direction: column; }
+        .flow-arrow { transform: rotate(90deg); margin: 20px 0; }
+    }
+</style>
+
+{% endblock %}

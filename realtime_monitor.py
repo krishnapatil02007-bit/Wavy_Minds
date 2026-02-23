@@ -109,23 +109,20 @@ import json
 import os
 from esp32_simulator import generate_sensor_data
 
-# -----------------------------
-# Load trained model and scaler
-# -----------------------------
-print("⏳ Loading ML Models...")
+print(" Loading ML Models...")
 model = pickle.load(open("model.pkl", "rb"))
 scaler = pickle.load(open("scaler.pkl", "rb"))
-print("✅ Models Loaded.")
+print(" Models Loaded.")
 
 FLOW_ORDER = ["Borewell Source", "Upper Storage Tank", "Drinking Tap"]
 SAMPLING_INTERVAL = 52  # Faster updates for demo
 OUTPUT_FILE = "system_state.json"
 
-print("\n🚀 Real-Time Water Monitoring Engine Started...")
-print(f"📂 Writing live data to: {OUTPUT_FILE}\n")
+print("\n Real-Time Water Monitoring Engine Started...")
+print(f" Writing live data to: {OUTPUT_FILE}\n")
 
 while True:
-    # 1. Get Data from Simulator
+
     sensor_data = generate_sensor_data()
     
     results = {}
@@ -136,18 +133,18 @@ while True:
     for sensor in sensor_data:
         location = sensor["location"]
 
-        # Prepare Data
+
         sample = pd.DataFrame([{
             "ph": sensor["ph"], "tds": sensor["tds"], 
             "turbidity": sensor["turbidity"], "temperature": sensor["temperature"]
         }])
 
-        # ML Prediction
+
         scaled_sample = scaler.transform(sample)
         score = model.decision_function(scaled_sample)[0]
         prediction = model.predict(scaled_sample)
 
-        # Logic
+
         if score > 0: severity = "Normal"
         elif score > -0.05: severity = "Low Risk"
         elif score > -0.15: severity = "Medium Risk"
@@ -158,7 +155,7 @@ while True:
         
         results[location] = status
 
-        # Add to list
+
         processed_data.append({
             "location": location,
             "ph": sensor["ph"],
@@ -170,23 +167,20 @@ while True:
             "status": status
         })
 
-    # Contamination Source Inference
+
     probable_source = "None"
     for location in FLOW_ORDER:
         if results.get(location) == "Contaminated":
             probable_source = location
             break
 
-    # -----------------------------
-    # 💾 SAVE TO JSON FILE
-    # -----------------------------
+
     system_state = {
         "timestamp": time.strftime('%Y-%m-%d %H:%M:%S'),
         "results": processed_data,
         "probable_source": probable_source
     }
 
-    # Write to file (atomic write to prevent reading half-written files)
     temp_file = OUTPUT_FILE + ".tmp"
     with open(temp_file, "w") as f:
         json.dump(system_state, f, indent=4)

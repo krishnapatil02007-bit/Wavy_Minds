@@ -1,15 +1,16 @@
+
+
 import random
 import time
 import json
+import os 
 
-# Water flow order (very important)
 FLOW_ORDER = [
     "Borewell Source",
     "Upper Storage Tank",
     "Drinking Tap"
 ]
 
-# Probability that contamination starts at any cycle
 CONTAMINATION_PROBABILITY = 0.2  # 20% chance
 
 def generate_clean_reading():
@@ -22,26 +23,31 @@ def generate_clean_reading():
 
 def generate_contaminated_reading():
     return {
-        "ph": round(random.uniform(4, 10), 2),
-        "tds": round(random.uniform(600, 1000), 2),
-        "turbidity": round(random.uniform(8, 25), 2),
-        "temperature": round(random.uniform(35, 50), 2)
+        "ph": round(random.uniform(4, 10), 2),  # Extreme pH
+        "tds": round(random.uniform(600, 1000), 2), # High TDS
+        "turbidity": round(random.uniform(8, 25), 2), # High Turbidity
+        "temperature": round(random.uniform(35, 50), 2) # High Temp
     }
 
 def generate_sensor_data():
     sensor_payload = []
 
-    # Decide randomly if contamination event happens
-    contamination_event = random.random() < CONTAMINATION_PROBABILITY
+    force_danger_mode = os.path.exists("danger.txt")
 
-    contamination_start_index = None
+    if force_danger_mode:
+        print("⚠️ MANUAL TRIGGER DETECTED: Forcing Contamination!")
+        
+        contamination_event = True
+        contamination_start_index = 1
+    else:
 
-    if contamination_event:
-        contamination_start_index = random.randint(0, len(FLOW_ORDER) - 1)
+        contamination_event = random.random() < CONTAMINATION_PROBABILITY
+        contamination_start_index = None
+        if contamination_event:
+            contamination_start_index = random.randint(0, len(FLOW_ORDER) - 1)
 
     for i, location in enumerate(FLOW_ORDER):
-
-        # If contamination started and this location is downstream
+        
         if contamination_event and i >= contamination_start_index:
             reading = generate_contaminated_reading()
         else:
@@ -52,13 +58,12 @@ def generate_sensor_data():
 
     return sensor_payload
 
-
-# Standalone testing mode
 if __name__ == "__main__":
 
-    SAMPLING_INTERVAL = 50  # seconds
+    SAMPLING_INTERVAL = 5 
 
-    print("\n🚀 ESP32 Simulation Started...\n")
+    print("\nESP32 Simulation Started...")
+    print("👉 Tip: Create a file named 'danger.txt' in this folder to trigger Red Alert!\n")
 
     while True:
         payload = generate_sensor_data()

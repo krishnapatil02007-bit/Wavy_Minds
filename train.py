@@ -7,9 +7,7 @@ import pickle
 # Fix randomness
 np.random.seed(42)
 
-# -----------------------
-# Generate NORMAL data
-# -----------------------
+
 normal_samples = 500
 
 normal_data = pd.DataFrame({
@@ -19,9 +17,6 @@ normal_data = pd.DataFrame({
     "temperature": np.random.normal(28, 1.5, normal_samples)
 })
 
-# -----------------------
-# Generate ABNORMAL data
-# -----------------------
 abnormal_samples = 50
 
 abnormal_data = pd.DataFrame({
@@ -31,18 +26,13 @@ abnormal_data = pd.DataFrame({
     "temperature": np.random.uniform(35, 50, abnormal_samples)
 })
 
-# Combine both
+
 data = pd.concat([normal_data, abnormal_data], ignore_index=True)
 
-# -----------------------
-# Scale features
-# -----------------------
 scaler = StandardScaler()
 scaled_data = scaler.fit_transform(data)
 
-# -----------------------
-# Train Isolation Forest
-# -----------------------
+
 model = IsolationForest(
     contamination=0.1,
     n_estimators=100,
@@ -51,9 +41,6 @@ model = IsolationForest(
 
 model.fit(scaled_data)
 
-# -----------------------
-# Save model and scaler
-# -----------------------
 with open("model.pkl", "wb") as f:
     pickle.dump(model, f)
 

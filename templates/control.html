@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 text-center">
+        
+        <h2 class="mb-4 fw-bold"><i class="fas fa-gamepad me-2"></i>System Control Center</h2>
+        <p class="text-muted mb-5">Override IoT sensors for demonstration purposes.</p>
+        
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-dark text-white py-3">
+                <h5 class="mb-0">Simulation Override</h5>
+            </div>
+            <div class="card-body p-5">
+                
+                <div class="d-grid gap-4">
+                    <button onclick="setMode('AUTO')" class="btn btn-outline-success btn-lg py-3 shadow-sm hover-scale">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="fas fa-robot fa-2x me-3"></i>
+                            <div class="text-start">
+                                <div class="fw-bold">AUTO MODE (Normal)</div>
+                                <small>Random sensor fluctuations (Safe)</small>
+                            </div>
+                        </div>
+                    </button>
+                    
+                    <button onclick="setMode('DANGER')" class="btn btn-danger btn-lg py-4 shadow hover-scale">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <i class="fas fa-radiation fa-2x me-3"></i>
+                            <div class="text-start">
+                                <div class="fw-bold">FORCE CONTAMINATION</div>
+                                <small>Trigger High Risk Alert (Tank & Tap)</small>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+
+                <div id="status-msg" class="alert alert-info mt-4" style="display:none;"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .hover-scale { transition: transform 0.2s; }
+    .hover-scale:active { transform: scale(0.98); }
+</style>
+
+<script>
+    function setMode(mode) {
+        // Show immediate feedback
+        const msg = document.getElementById('status-msg');
+        msg.style.display = 'block';
+        msg.className = mode === 'DANGER' ? 'alert alert-danger mt-4' : 'alert alert-success mt-4';
+        msg.innerHTML = `Sending Command: <strong>${mode}</strong>...`;
+
+        fetch('/set-mode', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ mode: mode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            msg.innerHTML = `✅ System Switched to: <strong>${data.mode}</strong>`;
+            setTimeout(() => { msg.style.display = 'none'; }, 2000);
+        });
+    }
+</script>
+{% endblock %}
