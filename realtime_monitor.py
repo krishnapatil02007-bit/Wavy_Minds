@@ -3,15 +3,30 @@ import pandas as pd
 import time
 from esp32_simulator import generate_sensor_data
 
-# Load model
+# -----------------------------
+# Load trained model and scaler
+# -----------------------------
 model = pickle.load(open("model.pkl", "rb"))
 scaler = pickle.load(open("scaler.pkl", "rb"))
+
+# -----------------------------
+# Define water flow order
+# -----------------------------
+FLOW_ORDER = [
+    "Borewell Source",
+    "Upper Storage Tank",
+    "Drinking Tap"
+]
+
+SAMPLING_INTERVAL = 5  # seconds (demo purpose)
 
 print("\n🚀 Real-Time Water Monitoring Started...\n")
 
 while True:
 
     sensor_data = generate_sensor_data()
+    results = {}   # Store contamination status
+    severity_map = {}  # Store severity for smarter inference
 
     print("\n=========== NEW SENSOR CYCLE ===========\n")
 
@@ -19,6 +34,7 @@ while True:
 
         location = sensor["location"]
 
+        # Prepare dataframe for ML
         sample = pd.DataFrame([{
             "ph": sensor["ph"],
             "tds": sensor["tds"],
@@ -26,11 +42,16 @@ while True:
             "temperature": sensor["temperature"]
         }])
 
+        # Scale
         scaled_sample = scaler.transform(sample)
 
+        # Predict
         prediction = model.predict(scaled_sample)
         score = model.decision_function(scaled_sample)[0]
 
+        # -----------------------------
+        # Severity classification
+        # -----------------------------
         if score > 0:
             severity = "Normal"
         elif score > -0.05:
@@ -40,16 +61,42 @@ while True:
         else:
             severity = "High Risk"
 
+        # Water Quality Score (0-100)
         quality_score = max(0, min(100, int((score + 0.2) * 250)))
 
+        # Contamination status
+        if prediction[0] == -1:
+            status = "Contaminated"
+        else:
+            status = "Normal"
+
+        results[location] = status
+        severity_map[location] = severity
+
+        # -----------------------------
+        # Print Report Per Location
+        # -----------------------------
         print(f"📍 Location: {location}")
         print(f"pH: {sensor['ph']} | TDS: {sensor['tds']} | Turbidity: {sensor['turbidity']} | Temp: {sensor['temperature']}")
         print(f"Severity: {severity}")
         print(f"Water Quality Score: {quality_score}/100")
 
-        if prediction[0] == -1:
+        if status == "Contaminated":
             print("⚠ Contamination Detected!\n")
         else:
             print("✅ Water Safe\n")
 
-    time.sleep(5)
+    # -----------------------------
+    # Contamination Source Inference
+    # -----------------------------
+    probable_source = "No contamination detected"
+
+    for location in FLOW_ORDER:
+        if results.get(location) == "Contaminated":
+            probable_source = location
+            break
+
+    print("🔎 Probable Contamination Source:", probable_source)
+    print("\n=========================================\n")
+
+    time.sleep(SAMPLING_INTERVAL)
