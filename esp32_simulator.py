@@ -56,7 +56,7 @@ def generate_sensor_data():
 # Standalone testing mode
 if __name__ == "__main__":
 
-    SAMPLING_INTERVAL = 10  # seconds
+    SAMPLING_INTERVAL = 50  # seconds
 
     print("\n🚀 ESP32 Simulation Started...\n")
 

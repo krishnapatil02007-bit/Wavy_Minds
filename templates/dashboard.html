@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div id="alert-section" class="mb-4">
+    <div class="alert alert-secondary text-center shadow-sm">
+        <div class="spinner-border spinner-border-sm text-secondary me-2" role="status"></div>
+        Connecting to Real-Time Monitor Engine...
+    </div>
+</div>
+
+<div class="row" id="sensor-container">
+    </div>
+
+<div class="card mt-4 shadow-sm">
+    <div class="card-header bg-light">
+        <i class="fas fa-satellite-dish me-2"></i><strong>Communication Log</strong>
+    </div>
+    <div class="card-body p-0">
+        <ul class="list-group list-group-flush" id="comm-log">
+            <li class="list-group-item text-muted small">System initialized. Waiting for events...</li>
+        </ul>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let lastSource = "None"; // Track state to avoid spamming alerts
+
+    async function fetchSystemState() {
+        try {
+            const response = await fetch('/get-latest-data');
+            
+            // If the monitor script hasn't started yet
+            if (response.status === 202) {
+                console.log("Waiting for monitor...");
+                return;
+            }
+            
+            const data = await response.json();
+            renderDashboard(data);
+
+        } catch (error) {
+            console.error("Connection lost:", error);
+        }
+    }
+
+    function renderDashboard(data) {
+        // 1. Update Alert Banner
+        const alertBox = document.getElementById('alert-section');
+        const commLog = document.getElementById('comm-log');
+
+        if (data.probable_source !== "None") {
+            // DANGER STATE
+            alertBox.innerHTML = `
+                <div class="alert alert-danger text-center shadow-lg border-danger">
+                    <h3 class="fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>CONTAMINATION ALERT</h3>
+                    <p class="mb-0 fs-5">Origin Traced To: <strong>${data.probable_source}</strong></p>
+                </div>
+            `;
+            
+            // Trigger Visual SMS if this is a NEW alert
+            if (lastSource !== data.probable_source) {
+                lastSource = data.probable_source;
+                triggerSMSAlert(data.probable_source);
+                
+                // Add to log
+                const time = new Date().toLocaleTimeString();
+                const logHtml = `<li class="list-group-item list-group-item-danger">
+                    <span class="badge bg-danger me-2">SMS SENT</span> 
+                    <strong>[${time}]</strong> Alert sent to Sarpanch: Contamination at ${data.probable_source}
+                </li>`;
+                commLog.innerHTML = logHtml + commLog.innerHTML;
+            }
+
+        } else {
+            // SAFE STATE
+            lastSource = "None";
+            alertBox.innerHTML = `
+                <div class="alert alert-success text-center shadow-sm">
+                    <h4 class="fw-bold"><i class="fas fa-shield-alt me-2"></i>SYSTEM SECURE</h4>
+                    <p class="mb-0">All water sources operating within safe BIS parameters.</p>
+                </div>
+            `;
+        }
+
+        // 2. Render Cards
+        const container = document.getElementById('sensor-container');
+        container.innerHTML = '';
+
+        data.results.forEach(sensor => {
+            let color = "success";
+            let icon = "check-circle";
+            let pulseClass = "";
+
+            if (sensor.severity === "High Risk") { color = "danger"; icon = "radiation"; pulseClass = "pulse-animation"; }
+            else if (sensor.severity === "Medium Risk") { color = "warning"; icon = "exclamation-circle"; }
+            else if (sensor.severity === "Low Risk") { color = "info"; icon = "info-circle"; }
+
+            const cardHtml = `
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-${color} shadow-sm ${pulseClass}">
+                        <div class="card-header bg-${color} text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">${sensor.location}</h5>
+                            <i class="fas fa-${icon}"></i>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted">pH Level</small>
+                                    <div class="fs-5 fw-bold">${sensor.ph}</div>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <small class="text-muted">TDS (ppm)</small>
+                                    <div class="fs-5 fw-bold">${sensor.tds}</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Turbidity</small>
+                                    <div class="fs-5 fw-bold">${sensor.turbidity}</div>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">Temp (°C)</small>
+                                    <div class="fs-5 fw-bold">${sensor.temperature}</div>
+                                </div>
+                            </div>
+                            
+                            <label class="small text-muted">Water Quality Score</label>
+                            <div class="progress" style="height: 15px;">
+                                <div class="progress-bar bg-${color}" role="progressbar" 
+                                     style="width: ${sensor.quality_score}%">
+                                    ${sensor.quality_score}
+                                </div>
+                            </div>
+                            <div class="mt-2 text-center">
+                                <span class="badge bg-${color}">${sensor.severity}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += cardHtml;
+        });
+    }
+
+    function triggerSMSAlert(location) {
+        Swal.fire({
+            title: '📲 SMS DISPATCHED',
+            html: `To: <strong>+91 98220 XXXXX</strong><br>Msg: "CRITICAL ALERT: Contamination detected at ${location}. Do not consume."`,
+            icon: 'warning',
+            confirmButtonColor: '#d33',
+            timer: 5000,
+            timerProgressBar: true
+        });
+    }
+
+    // Refresh every 2 seconds
+    setInterval(fetchSystemState, 2000);
+    fetchSystemState(); // Initial call
+</script>
+
+<style>
+    .pulse-animation {
+        animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+</style>
+{% endblock %}
