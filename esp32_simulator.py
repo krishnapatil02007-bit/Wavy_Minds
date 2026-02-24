@@ -11,7 +11,7 @@ FLOW_ORDER = [
     "Drinking Tap"
 ]
 
-CONTAMINATION_PROBABILITY = 0.2  # 20% chance
+CONTAMINATION_PROBABILITY = 0.2  
 
 def generate_clean_reading():
     return {
